@@ -1,5 +1,32 @@
+use core::error;
 use reqwest::{self, Error};
 use std::io;
+use thiserror::Error;
+
+#[derive(Error, Debug)]
+enum ApiErrors {
+    #[error("deu erro otario {0}")]
+    Rede(#[from] reqwest::Error),
+    #[error("erro no jason {0}")]
+    Parse(#[from] serde_json::Error),
+}
+#[derive(serde::Deserialize, Debug)]
+struct GeoResult {
+    id: i32,
+    name: String,
+    latitude: f64,
+    longitude: f64,
+    country: String,
+    admin1: String,
+}
+
+#[derive(serde::Deserialize)]
+struct ApiResponse {
+    results: Option<Vec<GeoResult>>,
+    generationtime_ms: f64,
+    reason: Option<String>,
+    error: Option<bool>,
+}
 
 #[tokio::main]
 async fn main() {
@@ -17,7 +44,7 @@ async fn main() {
 
     // USAR FORMAT! para montar a url
     let url = format!(
-        "https://geocoding-api.open-meteo.com/v1/search?name={}&count=1",
+        "https://geocoding-api.open-meteo.com/v1/search?name={}",
         city_name
     );
     // qual a diferenca de str para String?
@@ -31,19 +58,21 @@ async fn main() {
     // - tratamento de dados
     let dados = match resp {
         Ok(r) => r,
-        Err(e) => e.to_string(),
+        Err(e) => {
+            println!("ERRO:{e}");
+            return;
+        }
     };
-
-    println!("after resp: {}", dados)
-
-    // println!("{resp}");
+    //criar uma lista de seleção para as cidades encontradas na busca, e fazer outra busca na api para definir o clima no local
+    println!("Cidade encontrada, resultado {:#?}", &dados.results);
     //escrever o tipo do retorno do fetch
     // let response: HttpResponse = client.get(url).fetch().await?
 }
 
 //mudar para o fetch e remover o reqwest
-async fn get_response(url: String) -> Result<String, Error> {
+async fn get_response(url: String) -> Result<ApiResponse, ApiErrors> {
     let body = reqwest::get(url).await?.text().await?;
+    let data: ApiResponse = serde_json::from_str(&body)?;
 
-    Ok(body)
+    Ok(data)
 }
