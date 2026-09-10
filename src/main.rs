@@ -1,5 +1,5 @@
 use reqwest::{self, Error};
-use std::{fmt::format, io};
+use std::io;
 
 #[tokio::main]
 async fn main() {
@@ -26,10 +26,15 @@ async fn main() {
 
     let resp = get_response(url.to_string()).await;
 
-    match resp {
-        Ok(r) => println!("ok, {r}"),
-        Err(e) => println!("err"),
-    }
+    //estudar mais match
+    // - entender se é padrão para fazer "try/catch"
+    // - tratamento de dados
+    let dados = match resp {
+        Ok(r) => r,
+        Err(e) => e.to_string(),
+    };
+
+    println!("after resp: {}", dados)
 
     // println!("{resp}");
     //escrever o tipo do retorno do fetch
@@ -39,5 +44,6 @@ async fn main() {
 //mudar para o fetch e remover o reqwest
 async fn get_response(url: String) -> Result<String, Error> {
     let body = reqwest::get(url).await?.text().await?;
+
     Ok(body)
 }
