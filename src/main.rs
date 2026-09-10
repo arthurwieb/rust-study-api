@@ -20,10 +20,9 @@ async fn main() {
         "https://geocoding-api.open-meteo.com/v1/search?name={}&count=1",
         city_name
     );
-    let result = &url.replace("city_name", &city_name);
     // qual a diferenca de str para String?
 
-    println!("DEBUG: {}", result);
+    // println!("DEBUG: {}", result);
 
     let resp = get_response(url.to_string()).await;
 
