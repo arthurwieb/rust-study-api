@@ -47,6 +47,7 @@ async fn main() {
         "https://geocoding-api.open-meteo.com/v1/search?name={}",
         city_name
     );
+
     // qual a diferenca de str para String?
 
     // println!("DEBUG: {}", result);
@@ -63,13 +64,17 @@ async fn main() {
             return;
         }
     };
+
+    //o retorno do match poderia ser só o ok
+    /*
+    if let Ok(dados) = {}
+     */
+
     //criar uma lista de seleção para as cidades encontradas na busca, e fazer outra busca na api para definir o clima no local
     println!("Cidade encontrada, resultado {:#?}", &dados.results);
-    //escrever o tipo do retorno do fetch
-    // let response: HttpResponse = client.get(url).fetch().await?
 }
 
-//mudar para o fetch e remover o reqwest
+// refactor de nome de função
 async fn get_response(url: String) -> Result<ApiResponse, ApiErrors> {
     let body = reqwest::get(url).await?.text().await?;
     let data: ApiResponse = serde_json::from_str(&body)?;
