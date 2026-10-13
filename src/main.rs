@@ -29,7 +29,7 @@ async fn main() {
 
     match resp {
         Ok(r) => println!("ok, {r}"),
-        Err(e) => println!("err"),
+        Err(_e) => println!("err"),
     }
 
     // println!("{resp}");
