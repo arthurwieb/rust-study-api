@@ -1,5 +1,6 @@
 use core::error;
 use reqwest::{self, Error};
+use serde_json::error::Category::Data;
 use std::io;
 use thiserror::Error;
 
@@ -27,6 +28,31 @@ struct ApiResponse {
     reason: Option<String>,
     error: Option<bool>,
 }
+#[derive(serde::Deserialize, Debug)]
+struct WeatherResult {
+    hourly: Hourly,
+}
+
+
+#[derive(serde::Deserialize, Debug)]
+struct Hourly {
+    time: Vec<String>,
+    temperature_2m: Vec<f64>,
+    precipitation_probability: Vec<f64>,
+    rain: Vec<f64>,
+    snowfall: Vec<f64>,
+    apparent_temperature: Vec<f64>,
+}
+
+#[derive(Debug)]
+struct CurrentWeather {
+    time: String,
+    temperature_2m: f64 ,
+    precipitation_probability: f64,
+    rain: f64,
+    snowfall: f64, 
+    apparent_temperature: f64,
+}
 
 #[tokio::main]
 async fn main() {
@@ -40,19 +66,11 @@ async fn main() {
     let city_name = city_name.trim();
     println!("A consulta será feita para a cidade de {city_name}");
 
-    // let url = "https://geocoding-api.open-meteo.com/v1/search?name={city_name}";
-
-    // USAR FORMAT! para montar a url
-    let url = format!(
-        "https://geocoding-api.open-meteo.com/v1/search?name={}",
-        city_name
-    );
-
     // qual a diferenca de str para String?
 
     // !("DEBUG: {}", result);
 
-    let resp = get_response(url.to_string()).await;
+    let resp = get_city(city_name.to_string()).await;
 
     //estudar mais match
     // - entender se é padrão para fazer "try/catch"
@@ -97,18 +115,19 @@ async fn main() {
     dbg!(cidade_escolhida);
     // return;
     // dbg!(cidades);
-
-    let url2 = format!(
-        "https://api.open-meteo.com/v1/forecast?latitude={}&longitude={}&hourly=temperature_2m,precipitation_probability,rain,snowfall,apparent_temperature,visibility&forecast_days=1",
-        cidade_escolhida.latitude, cidade_escolhida.longitude
-    );
-
+    let dados = get_weather(cidade_escolhida).await;
+    dbg!(dados);
     //criar uma lista de seleção para as cidades encontradas na busca, e fazer outra busca na api para definir o clima no local
     // let var_name = println!("Cidade encontrada, resultado {:#?}", &dados.results);
 }
 
 // refactor de nome de função
-async fn get_response(url: String) -> Result<ApiResponse, ApiErrors> {
+async fn get_city(city_name: String) -> Result<ApiResponse, ApiErrors> {
+    let url = format!(
+        "https://geocoding-api.open-meteo.com/v1/search?name={}",
+        city_name
+    );
+
     let body = reqwest::get(url).await?.text().await?;
 
     let data: ApiResponse = serde_json::from_str(&body)?;
@@ -117,4 +136,16 @@ async fn get_response(url: String) -> Result<ApiResponse, ApiErrors> {
 }
 
 
-async fn get_weather_result(url: String) -> Result<>
+async fn get_weather(cidade_escolhida: &GeoResult) -> Result<WeatherResult, ApiErrors> {
+    let url = format!(
+        "https://api.open-meteo.com/v1/forecast?latitude={}&longitude={}&hourly=temperature_2m,precipitation_probability,rain,snowfall,apparent_temperature,visibility&forecast_days=1",
+        cidade_escolhida.latitude, cidade_escolhida.longitude
+    );
+    let body = reqwest::get(url).await?.text().await?;
+
+    let data: WeatherResult = serde_json::from_str(&body)?;
+
+    Ok(data)
+}
+
+async fn get_current_weather(data: &WeatherResult) -> Option<CurrentWeather> {
