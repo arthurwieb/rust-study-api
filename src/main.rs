@@ -3,7 +3,7 @@ use reqwest::{self, Error};
 use serde_json::error::Category::Data;
 use std::io;
 use thiserror::Error;
-
+use chrono::prelude::*;
 #[derive(Error, Debug)]
 enum ApiErrors {
     #[error("deu erro otario {0}")]
@@ -148,4 +148,17 @@ async fn get_weather(cidade_escolhida: &GeoResult) -> Result<WeatherResult, ApiE
     Ok(data)
 }
 
-async fn get_current_weather(data: &WeatherResult) -> Option<CurrentWeather> {
+async fn get_current_weather(data: &WeatherResult) -> Option<CurrentWeather> { 
+    // let current_time = chrono::Local::now().format("%Y-%m-%dT%H:00").to_string();
+    // let index = data.hourly.time.iter().position(|t| t == &current_time)?;
+    let current_hour2 = chrono::Local::now().format("%Y-%m-%dT%H:00").to_string();
+    let index = data.hourly.time.iter().position(|t| t == &current_hour2)?;
+    Some(CurrentWeather {
+        time: current_hour2,
+        temperature_2m: data.hourly.temperature_2m[index],
+        precipitation_probability: data.hourly.precipitation_probability[index],
+        rain: data.hourly.rain[index],
+        snowfall: data.hourly.snowfall[index],
+        apparent_temperature: data.hourly.apparent_temperature[index],
+    })
+}
